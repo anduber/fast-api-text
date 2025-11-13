@@ -1,0 +1,1 @@
+"""Data models used internally by the application services."""
