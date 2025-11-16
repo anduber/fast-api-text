@@ -1,7 +1,7 @@
 """Pytest fixtures for API testing.
 
 We use httpx's ASGI transport to interact with the FastAPI app without
-starting a real HTTP server. The task store is reset between tests.
+starting a real HTTP server. The database is reset between tests for isolation.
 """
 
 from __future__ import annotations
@@ -14,13 +14,15 @@ import httpx
 import pytest
 
 from main import app
-from app.services.task_service import TaskService
+from app.db.session import engine
+from app.db.base import Base
 
 
 @pytest.fixture(autouse=True)
-def _reset_store() -> None:
-    """Reset in-memory store before each test to ensure isolation."""
-    TaskService.reset_store()
+def _reset_db() -> None:
+    """Drop and recreate tables before each test to ensure isolation."""
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
 
 
 @pytest.fixture()

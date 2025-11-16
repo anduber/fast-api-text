@@ -1,35 +1,24 @@
-"""Internal Task model used by the service layer.
-
-We keep an internal representation decoupled from the Pydantic schemas
-that are exposed at the API boundary. This mirrors common patterns when
-using an ORM (e.g., SQLAlchemy), but here we use a simple dataclass for
-in-memory storage.
-"""
+"""SQLAlchemy ORM model for tasks stored in the database."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
+from sqlalchemy import Integer, String, Text, Boolean, DateTime
+from sqlalchemy.orm import Mapped, mapped_column
 
-@dataclass
-class Task:
-    """Internal Task model.
+from app.db.base import Base
 
-    Attributes
-    -----------
-    id: Unique identifier (auto-incremented in the service layer).
-    title: Short title for the task.
-    description: Optional longer description.
-    is_completed: Whether the task is completed.
-    created_at: Timestamp when the task was created.
-    updated_at: Timestamp of the last update.
-    """
 
-    id: int
-    title: str
-    description: Optional[str]
-    is_completed: bool
-    created_at: datetime
-    updated_at: datetime
+class Task(Base):
+    """ORM model representing a task record."""
+
+    __tablename__ = "tasks"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    title: Mapped[str] = mapped_column(String(100), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    is_completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)

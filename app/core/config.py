@@ -66,6 +66,12 @@ class Settings(BaseModel):
     ENVIRONMENT: str = Field(default=os.getenv("ENVIRONMENT", "development"))
     DEBUG: bool = Field(default=_parse_bool(os.getenv("DEBUG"), default=False))
     ALLOWED_ORIGINS: List[str] = Field(default=_parse_origins(os.getenv("ALLOWED_ORIGINS"), default=["*"]))
+    # SQLAlchemy database URL
+    # Examples:
+    # - SQLite (dev default): sqlite:///./task_manager.db
+    # - SQL Server (ODBC Driver 18):
+    #   mssql+pyodbc://username:password@server:1433/database?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes
+    DATABASE_URL: str = Field(default=os.getenv("DATABASE_URL", "sqlite:///./task_manager.db"))
 
 
 @lru_cache(maxsize=1)
