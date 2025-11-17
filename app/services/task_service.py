@@ -1,14 +1,16 @@
-"""Service layer providing CRUD operations for tasks using SQLAlchemy."""
+"""Service layer providing CRUD operations via a repository.
+
+Routes should depend on the service, and the service depends on
+the repository (which itself is bound to the request-scoped DB session).
+"""
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import List
-
-from sqlalchemy.orm import Session
 
 from app.models.task import Task
 from app.schemas.task import TaskCreate, TaskUpdate
+from app.repositories import TaskRepository
 
 
 class TaskNotFoundError(Exception):
@@ -16,64 +18,35 @@ class TaskNotFoundError(Exception):
 
 
 class TaskService:
-    """CRUD operations backed by a database session."""
+    """CRUD operations backed by a repository."""
 
-    @staticmethod
-    def list_tasks(db: Session) -> List[Task]:
+    def __init__(self, repo: TaskRepository):
+        self.repo = repo
+
+    def list_tasks(self) -> List[Task]:
         """Return all tasks as a list (unordered)."""
-        return db.query(Task).all()
+        return self.repo.list()
 
-    @staticmethod
-    def get_task(db: Session, task_id: int) -> Task:
+    def get_task(self, task_id: int) -> Task:
         """Return a single task by ID or raise TaskNotFoundError."""
-        task = db.get(Task, task_id)
+        task = self.repo.get(task_id)
         if task is None:
             raise TaskNotFoundError(f"Task with id {task_id} not found")
         return task
 
-    @staticmethod
-    def create_task(db: Session, payload: TaskCreate) -> Task:
+    def create_task(self, payload: TaskCreate) -> Task:
         """Create a new task in the database from the provided payload."""
-        now = datetime.utcnow()
-        task = Task(
-            title=payload.title,
-            description=payload.description,
-            is_completed=payload.is_completed,
-            created_at=now,
-            updated_at=now,
-        )
-        db.add(task)
-        db.commit()
-        db.refresh(task)
-        return task
+        return self.repo.create(payload)
 
-    @staticmethod
-    def update_task(db: Session, task_id: int, payload: TaskUpdate) -> Task:
+    def update_task(self, task_id: int, payload: TaskUpdate) -> Task:
         """Update fields on an existing task and return the updated task.
 
         Supports partial updates: only provided fields are changed.
         """
-        task = TaskService.get_task(db, task_id)
-        changed = False
-        if payload.title is not None:
-            task.title = payload.title
-            changed = True
-        if payload.description is not None:
-            task.description = payload.description
-            changed = True
-        if payload.is_completed is not None:
-            task.is_completed = payload.is_completed
-            changed = True
-        if changed:
-            task.updated_at = datetime.utcnow()
-            db.add(task)
-            db.commit()
-            db.refresh(task)
-        return task
+        existing = self.get_task(task_id)
+        return self.repo.update(existing, payload)
 
-    @staticmethod
-    def delete_task(db: Session, task_id: int) -> None:
+    def delete_task(self, task_id: int) -> None:
         """Remove a task by ID or raise TaskNotFoundError if absent."""
-        task = TaskService.get_task(db, task_id)
-        db.delete(task)
-        db.commit()
+        existing = self.get_task(task_id)
+        self.repo.delete(existing)
