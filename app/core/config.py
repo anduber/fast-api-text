@@ -71,6 +71,7 @@ class Settings(BaseModel):
     # - SQLite (dev default): sqlite:///./task_manager.db
     # - SQL Server (ODBC Driver 18):
     #   mssql+pyodbc://username:password@server:1433/database?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes
+    print(os.getenv("DATABASE_URL"))
     DATABASE_URL: str = Field(default=os.getenv("DATABASE_URL", "sqlite:///./task_manager.db"))
 
 
